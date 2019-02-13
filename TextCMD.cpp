@@ -12,10 +12,16 @@
 #define nullptr 0
 #endif
 
+#ifndef MAX_CMD_LINE_LEN
+#define MAX_CMD_LINE_LEN 0x1f
+#endif
+
 TextCMD::TextCMD(uint8_t count, cmd_dispatch dispatch[]) {
     _dispatch = dispatch;
     _dispatch_count = count;
     _cmd_line_buf = nullptr;
+    argc = 0;
+    cur_char = 0;
 }
 
 TextCMD::~TextCMD() {
@@ -27,16 +33,51 @@ int8_t TextCMD::do_dispatch(const char* line) {
     return do_dispatch();
 }
 
+int8_t TextCMD::add_char(const char ch) {
+    int8_t cmd_ret = 0;
+    if (_cmd_line_buf == nullptr) {
+        _cmd_line_buf = (char *)malloc(MAX_CMD_LINE_LEN);
+        _cmd_line_buf[0] = 0;
+    }
+    int16_t current_line_end = strlen(_cmd_line_buf);
+    if (ch == '\b') {
+        if (current_line_end) {
+            current_line_end--;
+        }
+    }
+    else if (ch == '\r') {
+    }
+    else if (ch == '\n') {
+        if (current_line_end != 0) {
+            this->split_line_buf_to_argv();
+            cmd_ret = this->do_dispatch();
+        }
+        current_line_end = 0;
+    }
+    else {
+        if (current_line_end < MAX_CMD_LINE_LEN) {
+            _cmd_line_buf[current_line_end++] = ch;
+        }
+    }
+    if (_cmd_line_buf != nullptr) { _cmd_line_buf[current_line_end] = '\0'; }
+    cur_char = ch;
+    return cmd_ret;
+}
+
 int8_t TextCMD::do_dispatch() {
     if (!argc) {
         return 0;
     }
+    int8_t ret = -1;
     for (uint8_t i = 0; i < _dispatch_count; i++) {
         if (strcmp(_dispatch[i].cmd, argv[0]) == 0) {
-            return _dispatch[i].cb(argc,(const char**)argv);
+            ret = _dispatch[i].cb(argc,(const char**)argv);
+            break;
         }
     }
-    return -1;
+    free(_cmd_line_buf);
+    _cmd_line_buf = nullptr;
+    return ret;
 }
 
 void TextCMD::set_argv(uint8_t new_argc, char* new_argv[]) {
@@ -47,14 +88,18 @@ void TextCMD::set_argv(uint8_t new_argc, char* new_argv[]) {
 }
 
 void TextCMD::split_line_to_argv(const char* input_line) {
-    argc = 0;
-    bool new_arg = true;
-
     if (_cmd_line_buf != nullptr) free(_cmd_line_buf);
     int line_len = strlen(input_line);
     _cmd_line_buf = (char *)malloc(line_len);
     strcpy(_cmd_line_buf, input_line);
+    split_line_buf_to_argv();
+}
+
+void TextCMD::split_line_buf_to_argv() {
+    argc = 0;
+    bool new_arg = true;
     uint8_t args_start = 0;
+    int line_len = strlen(_cmd_line_buf);
 
     // cmds with spaces inside as argv[0]
     for (uint8_t i = 0; i < _dispatch_count; i++) {
