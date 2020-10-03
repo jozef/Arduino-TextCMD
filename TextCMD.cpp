@@ -45,9 +45,7 @@ int8_t TextCMD::add_char(const char ch) {
             current_line_end--;
         }
     }
-    else if (ch == '\r') {
-    }
-    else if (ch == '\n') {
+    else if ((ch == '\n') || (ch == '\r')) {
         if (current_line_end != 0) {
             this->split_line_buf_to_argv();
             cmd_ret = this->do_dispatch();
@@ -133,3 +131,6 @@ void TextCMD::split_line_buf_to_argv() {
     }
 }
 
+uint8_t TextCMD::cur_len() {
+    return strlen(_cmd_line_buf);
+}

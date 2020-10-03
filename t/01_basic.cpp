@@ -20,8 +20,8 @@ int8_t cmd_help(uint8_t argc, const char* argv[]) {
 
 int8_t cmd_math_op(uint8_t argc, const char* argv[]) {
     if (argc != 3) return -2;
-    int num1 = stoi(argv[1]);
-    int num2 = stoi(argv[2]);
+    int num1 = strtol(argv[1], NULL, 0);
+    int num2 = strtol(argv[2], NULL, 0);
     if (argv[0][0] == '+') return cmd_feedback = num1 + num2;
     if (argv[0][0] == '-') return cmd_feedback = num1 - num2;
     if (argv[0][0] == '*') return cmd_feedback = num1 * num2;
@@ -34,8 +34,8 @@ void test_do_dispatch(TextCMD* cmd) {
     ok(cmd->do_dispatch("?") == -2, "dispatch known command");
     ok(cmd_feedback == 1, "cmd_help called");
     ok(cmd->do_dispatch("unknown") == -1, "unknown command returns -1");
-    cmd->do_dispatch("+ 5 5");
-    ok(cmd_feedback == 10, "cmd_math_op called, addition");
+    cmd->do_dispatch("+ 6 -2");
+    ok(cmd_feedback == 4, "cmd_math_op called, addition");
     cmd->do_dispatch("- 5 2");
     ok(cmd_feedback == 3, "cmd_math_op called, subtraction");
     cmd->do_dispatch("* 5 2");
@@ -61,6 +61,14 @@ void test_add_char(TextCMD* cmd) {
     ok(cmd_feedback == 6, "cmd_math_op called, multiplication");
 }
 
+void test_different_bases(TextCMD* cmd) {
+    cmd_feedback = 0;
+    cmd->do_dispatch("+ 010 010");
+    ok(cmd_feedback == 16, "cmd_math_op called, addition of two octals");
+    cmd->do_dispatch("- 0x18 0x10");
+    ok(cmd_feedback == 8, "cmd_math_op called, subtraction of two hex");
+}
+
 int main(int argc, char* argv[]) {
     cmd_dispatch commands[] = {
         { "?", &cmd_help    },
@@ -73,6 +81,7 @@ int main(int argc, char* argv[]) {
 
     test_do_dispatch(&cmd);
     test_add_char(&cmd);
+    test_different_bases(&cmd);
 
     return 0;
 }

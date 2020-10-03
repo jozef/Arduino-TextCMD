@@ -23,7 +23,7 @@ class TextCMD {
         int8_t do_dispatch();
         int8_t do_dispatch(const char* line);
         int8_t add_char(const char);
-        // int argv_to_int(uint8_t idx);    # TODO parse argv[idx-1] and return integer of that argument
+        uint8_t cur_len();
     private:
         uint8_t _dispatch_count = 0;
         char* _cmd_line_buf;
